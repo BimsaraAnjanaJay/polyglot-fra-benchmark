@@ -1,0 +1,101 @@
+version: "3.9"
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    ports:
+      - "16686:16686"
+      - "14250:14250"
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.103.1
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel-collector/config.yaml:/etc/otelcol/config.yaml
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    depends_on:
+      - jaeger
+
+  host-python:
+    build: ./host-python
+    environment:
+      PORT: 8001
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: host-python
+      FUNCTIONS_CONFIG_PATH: /app/shared/functions.json
+    volumes:
+      - ./benchmark/functions.json:/app/shared/functions.json:ro
+    ports:
+      - "8001:8001"
+    depends_on:
+      - otel-collector
+
+  host-java:
+    build: ./host-java
+    environment:
+      SERVER_PORT: 8002
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: host-java
+      FUNCTIONS_CONFIG_PATH: /app/shared/functions.json
+    volumes:
+      - ./benchmark/functions.json:/app/shared/functions.json:ro
+    ports:
+      - "8002:8002"
+    depends_on:
+      - otel-collector
+
+  internal-python:
+    build: ./internal-python
+    environment:
+      PORT: 8003
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: internal-python
+      FUNCTIONS_CONFIG_PATH: /app/shared/functions.json
+      HOST_PYTHON_URL: http://host-python:8001
+    volumes:
+      - ./benchmark/functions.json:/app/shared/functions.json:ro
+    ports:
+      - "8003:8003"
+    depends_on:
+      - host-python
+      - otel-collector
+
+  internal-node:
+    build: ./internal-node
+    environment:
+      PORT: 8004
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: internal-node
+      FUNCTIONS_CONFIG_PATH: /app/shared/functions.json
+      HOST_JAVA_URL: http://host-java:8002
+    volumes:
+      - ./benchmark/functions.json:/app/shared/functions.json:ro
+    ports:
+      - "8004:8004"
+    depends_on:
+      - host-java
+      - otel-collector
+
+  gateway-node:
+    build: ./gateway-node
+    environment:
+      PORT: 3000
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_SERVICE_NAME: gateway-node
+      FUNCTIONS_CONFIG_PATH: /app/shared/functions.json
+      HOST_PYTHON_URL: http://host-python:8001
+      HOST_JAVA_URL: http://host-java:8002
+      INTERNAL_PYTHON_URL: http://internal-python:8003
+      INTERNAL_NODE_URL: http://internal-node:8004
+      DEFAULT_ROUNDS: 5
+    volumes:
+      - ./benchmark/functions.json:/app/shared/functions.json:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - host-python
+      - host-java
+      - internal-python
+      - internal-node
+      - otel-collector
