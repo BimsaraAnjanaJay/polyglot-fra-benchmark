@@ -1,0 +1,156 @@
+version: "3.9"
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    ports:
+      - 16686:16686
+      - 14250:14250
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.103.1
+    command:
+      - --config=/etc/otelcol/config.yaml
+    volumes:
+      - ./otel-collector/config.yaml:/etc/otelcol/config.yaml
+    ports:
+      - 4317:4317
+      - 4318:4318
+    depends_on:
+      - jaeger
+    environment:
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_SERVICE_NAME=otel-collector
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=production
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_NODE_RESOURCE_DETECTORS=env,host,os,process
+  host-python:
+    build: ./host-python
+    command:
+      - uvicorn
+      - app:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8001"
+    environment:
+      - PORT=8001
+      - FUNCTIONS_CONFIG_PATH=/app/shared/functions.json
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_SERVICE_NAME=host-python
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=production
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_NODE_RESOURCE_DETECTORS=env,host,os,process
+    volumes:
+      - ./benchmark/functions.json:/app/shared/functions.json:ro
+    ports:
+      - 8001:8001
+    depends_on:
+      - otel-collector
+      - jaeger
+  host-java:
+    build: ./host-java
+    command:
+      - java
+      - -jar
+      - /app/app.jar
+    environment:
+      - SERVER_PORT=8002
+      - FUNCTIONS_CONFIG_PATH=/app/shared/functions.json
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_SERVICE_NAME=host-java
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=production
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_INSTRUMENTATION_METHODS_INCLUDE=fra.*[*];com.*[*];org.*[*];io.*[*]
+      - JAVA_TOOL_OPTIONS=-javaagent:/tmp/otel-agent.jar
+    volumes:
+      - ./benchmark/functions.json:/app/shared/functions.json:ro
+      - /home/ucsc/.fra-otel-agent/opentelemetry-javaagent.jar:/tmp/otel-agent.jar:ro
+    ports:
+      - 8002:8002
+    depends_on:
+      - otel-collector
+      - jaeger
+  internal-python:
+    build: ./internal-python
+    command:
+      - uvicorn
+      - app:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8003"
+    environment:
+      - PORT=8003
+      - FUNCTIONS_CONFIG_PATH=/app/shared/functions.json
+      - HOST_PYTHON_URL=http://host-python:8001
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_SERVICE_NAME=internal-python
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=production
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_NODE_RESOURCE_DETECTORS=env,host,os,process
+    volumes:
+      - ./benchmark/functions.json:/app/shared/functions.json:ro
+    ports:
+      - 8003:8003
+    depends_on:
+      - host-python
+      - otel-collector
+      - jaeger
+  internal-node:
+    build: ./internal-node
+    command:
+      - npm
+      - start
+    environment:
+      - PORT=8004
+      - FUNCTIONS_CONFIG_PATH=/app/shared/functions.json
+      - HOST_JAVA_URL=http://host-java:8002
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_SERVICE_NAME=internal-node
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=production
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_NODE_RESOURCE_DETECTORS=env,host,os,process
+    volumes:
+      - ./benchmark/functions.json:/app/shared/functions.json:ro
+    ports:
+      - 8004:8004
+    depends_on:
+      - host-java
+      - otel-collector
+      - jaeger
+  gateway-node:
+    build: ./gateway-node
+    command:
+      - npm
+      - start
+    environment:
+      - PORT=3000
+      - FUNCTIONS_CONFIG_PATH=/app/shared/functions.json
+      - HOST_PYTHON_URL=http://host-python:8001
+      - HOST_JAVA_URL=http://host-java:8002
+      - INTERNAL_PYTHON_URL=http://internal-python:8003
+      - INTERNAL_NODE_URL=http://internal-node:8004
+      - DEFAULT_ROUNDS=5
+      - OTEL_TRACES_EXPORTER=otlp
+      - OTEL_SERVICE_NAME=gateway-node
+      - OTEL_RESOURCE_ATTRIBUTES=service.namespace=production
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_NODE_RESOURCE_DETECTORS=env,host,os,process
+    volumes:
+      - ./benchmark/functions.json:/app/shared/functions.json:ro
+    ports:
+      - 8000:3000
+    depends_on:
+      - host-python
+      - host-java
+      - internal-python
+      - internal-node
+      - otel-collector
+      - jaeger

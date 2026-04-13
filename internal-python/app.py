@@ -30,7 +30,9 @@ class InternalRequest(BaseModel):
 def generate_internal(req: InternalRequest):
     for _ in range(req.count):
         with tracer.start_as_current_span("internal-python.generate") as span:
-            span.set_attribute("fra.function_name", req.functionName)
+            # NOTE: do NOT set fra.function_name here — this is the caller span,
+            # not the host span. Setting it here causes the FRA plugin to
+            # attribute the function to internal-python instead of host-python.
             span.set_attribute("fra.round_id", req.roundId)
             requests.get(
                 f"{HOST_PYTHON_URL}/functions/{req.functionName}",

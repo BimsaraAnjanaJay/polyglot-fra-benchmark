@@ -41,7 +41,12 @@ function buildRoundPlan(roundId) {
 
 async function callUrl(url, headers = {}) {
   const res = await fetch(url, { headers });
-  if (!res.ok) throw new Error(`Request failed: ${res.status} ${url}`);
+  // On non-ok, return a partial error object rather than throwing — keeps the
+  // experiment loop alive even when a downstream service is temporarily down.
+  if (!res.ok) {
+    console.warn(`[gateway] Downstream error ${res.status} ${url}`);
+    return { _error: true, status: res.status, url };
+  }
   return await res.json().catch(() => ({}));
 }
 
@@ -83,10 +88,14 @@ async function runPlan(plan, roundId) {
   for (const item of shuffle(expanded)) {
     await tracer.startActiveSpan("gateway.external.invoke", async span => {
       try {
-        span.setAttribute("fra.function_name", item.name);
+        // NOTE: do NOT set fra.function_name here — gateway-node is the external
+        // caller, not the host. Setting it here creates ghost entries in the FRA
+        // plugin attributed to gateway-node. The host service sets fra.function_name.
         span.setAttribute("fra.round_id", roundId);
         const url = `${hostBase[item.host_service]}${item.path}`;
         await callUrl(url, { "x-fra-source": "external", "x-round-id": String(roundId), "x-caller-service": "gateway-node" });
+      } catch (err) {
+        console.warn(`[gateway] External call failed for ${item.name}: ${err.message}`);
       } finally {
         span.end();
       }

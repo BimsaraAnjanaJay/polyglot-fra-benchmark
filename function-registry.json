@@ -1,0 +1,99 @@
+[
+  {
+    "service": "gateway-node",
+    "language": "nodejs",
+    "functions": [
+      {
+        "name": "shuffle",
+        "file": "app.js",
+        "language": "nodejs"
+      },
+      {
+        "name": "sleep",
+        "file": "app.js",
+        "language": "nodejs"
+      },
+      {
+        "name": "jitter",
+        "file": "app.js",
+        "language": "nodejs"
+      },
+      {
+        "name": "buildRoundPlan",
+        "file": "app.js",
+        "language": "nodejs"
+      },
+      {
+        "name": "callUrl",
+        "file": "app.js",
+        "language": "nodejs"
+      },
+      {
+        "name": "runNoise",
+        "file": "app.js",
+        "language": "nodejs"
+      },
+      {
+        "name": "runPlan",
+        "file": "app.js",
+        "language": "nodejs"
+      }
+    ],
+    "builtAt": "2026-04-12T13:18:12.688Z"
+  },
+  {
+    "service": "host-java",
+    "language": "java",
+    "functions": [
+      {
+        "name": "exists",
+        "className": "FunctionConfigLoader",
+        "file": "src/main/java/fra/hostjava/FunctionConfigLoader.java",
+        "language": "java"
+      },
+      {
+        "name": "invoke",
+        "className": "FunctionController",
+        "file": "src/main/java/fra/hostjava/FunctionController.java",
+        "language": "java"
+      },
+      {
+        "name": "health",
+        "className": "FunctionController",
+        "file": "src/main/java/fra/hostjava/FunctionController.java",
+        "language": "java"
+      },
+      {
+        "name": "metricsPlaceholder",
+        "className": "FunctionController",
+        "file": "src/main/java/fra/hostjava/FunctionController.java",
+        "language": "java"
+      },
+      {
+        "name": "main",
+        "className": "HostJavaApplication",
+        "file": "src/main/java/fra/hostjava/HostJavaApplication.java",
+        "language": "java"
+      }
+    ],
+    "builtAt": "2026-04-12T13:18:12.690Z"
+  },
+  {
+    "service": "host-python",
+    "language": "python",
+    "functions": [],
+    "builtAt": "2026-04-12T13:18:12.685Z"
+  },
+  {
+    "service": "internal-node",
+    "language": "nodejs",
+    "functions": [],
+    "builtAt": "2026-04-12T13:18:12.688Z"
+  },
+  {
+    "service": "internal-python",
+    "language": "python",
+    "functions": [],
+    "builtAt": "2026-04-12T13:18:12.686Z"
+  }
+]

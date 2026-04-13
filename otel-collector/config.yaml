@@ -9,8 +9,8 @@ processors:
 
 exporters:
   debug:
-  jaeger:
-    endpoint: jaeger:14250
+  otlp:
+    endpoint: jaeger:4317
     tls:
       insecure: true
 
@@ -19,4 +19,4 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [debug, jaeger]
+      exporters: [debug, otlp]

@@ -1,0 +1,97 @@
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: polyglot-fra-benchmark
+  title: Polyglot Fra Benchmark
+  description: Microservices system from
+    https://github.com/BimsaraAnjanaJay/polyglot-fra-benchmark
+  annotations:
+    github.com/project-slug: BimsaraAnjanaJay/polyglot-fra-benchmark
+spec:
+  owner: team-platform
+  domain: microservices
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: gateway-node
+  title: Gateway Node
+  description: nodejs microservice
+  annotations:
+    jaegertracing.io/service-name: gateway-node
+    tracing.opentelemetry/instrumented: "true"
+    github.com/project-slug: BimsaraAnjanaJay/polyglot-fra-benchmark
+spec:
+  type: service
+  lifecycle: production
+  owner: team-platform
+  system: polyglot-fra-benchmark
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: host-java
+  title: Host Java
+  description: java microservice
+  annotations:
+    jaegertracing.io/service-name: host-java
+    tracing.opentelemetry/instrumented: "true"
+    github.com/project-slug: BimsaraAnjanaJay/polyglot-fra-benchmark
+spec:
+  type: service
+  lifecycle: production
+  owner: team-platform
+  system: polyglot-fra-benchmark
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: host-python
+  title: Host Python
+  description: python microservice
+  annotations:
+    jaegertracing.io/service-name: host-python
+    tracing.opentelemetry/instrumented: "true"
+    github.com/project-slug: BimsaraAnjanaJay/polyglot-fra-benchmark
+spec:
+  type: service
+  lifecycle: production
+  owner: team-platform
+  system: polyglot-fra-benchmark
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: internal-node
+  title: Internal Node
+  description: nodejs microservice
+  annotations:
+    jaegertracing.io/service-name: internal-node
+    tracing.opentelemetry/instrumented: "true"
+    github.com/project-slug: BimsaraAnjanaJay/polyglot-fra-benchmark
+spec:
+  type: service
+  lifecycle: production
+  owner: team-platform
+  system: polyglot-fra-benchmark
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: internal-python
+  title: Internal Python
+  description: python microservice
+  annotations:
+    jaegertracing.io/service-name: internal-python
+    tracing.opentelemetry/instrumented: "true"
+    github.com/project-slug: BimsaraAnjanaJay/polyglot-fra-benchmark
+spec:
+  type: service
+  lifecycle: production
+  owner: team-platform
+  system: polyglot-fra-benchmark

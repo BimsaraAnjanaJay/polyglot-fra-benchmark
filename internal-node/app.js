@@ -11,7 +11,9 @@ app.post("/generate-internal", async (req, res) => {
   for (let i = 0; i < count; i++) {
     await tracer.startActiveSpan("internal-node.generate", async span => {
       try {
-        span.setAttribute("fra.function_name", functionName);
+        // NOTE: do NOT set fra.function_name here — this is the caller span,
+        // not the host span. Setting it here causes the FRA plugin to
+        // attribute the function to internal-node instead of host-java.
         span.setAttribute("fra.round_id", String(roundId));
         await fetch(`${process.env.HOST_JAVA_URL}/functions/${functionName}`, {
           headers: {

@@ -20,7 +20,7 @@ public class FunctionController {
 
     @GetMapping("/functions/{name}")
     public Map<String, Object> invoke(
-            @PathVariable String name,
+            @PathVariable("name") String name,
             @RequestHeader(value = "x-fra-source", required = false) String source,
             @RequestHeader(value = "x-round-id", required = false) String roundId,
             @RequestHeader(value = "x-caller-service", required = false) String callerService
